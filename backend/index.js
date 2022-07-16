@@ -20,25 +20,28 @@ io.on("connection", socket => {
     console.log(`${socket.id} has joined`);
 
     socket.broadcast.emit("notification",{ 
-        type : "success",
+        isHasJoined : true,
         message : `${socket.id} has joined` 
     });
 
     socket.emit("notification", {
-        type : "success",
-        notification : `Welcome ${socket.id}`
+        isHasJoined : true,
+        message : `Welcome ${socket.id}`
     });
 
     socket.on("disconnect", () => {
         socket.broadcast.emit("notification",  {
-            type : "danger",
-            notification : `${socket.id} has left`
+            isHasJoined : false,
+            message : `${socket.id} has left`
         });
     });
 
-    socket.on("new-message", message => {
-        console.log(message);
-        io.except(socket.id).emit("new-message", message );
+    socket.on("new-message", messageObject => {
+        console.log(messageObject);
+        io.except(socket.id).emit("new-message", {
+            message : messageObject.message,
+            senderId : messageObject.senderId 
+        });
     });
 
 });

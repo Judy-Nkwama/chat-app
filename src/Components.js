@@ -14,7 +14,7 @@ export const Avatar = ({isOnline, isMan}) => {
     );
 };
 
-export const Nav = () => {
+export const Nav = ({userSocket, typer}) => {
     return (
         <div className="Nav h-100">
             <div className="d-flex pt-2 justify-content-end pe-2">
@@ -45,13 +45,13 @@ export const ChatMember = ({isTyping, isOnline, isMan}) => {
     );
 };
 
-export const Notification = ({isHasJoined}) => {
+export const Notification = ({isHasJoined, message}) => {
     return (
-        <div className={`text-center fs-13 text-white ${isHasJoined ? "notif-success" : "notif-danger" }`} >Noella has join...</div>
+        <div className={`text-center fs-13 text-white my-1 ${isHasJoined ? "notif-success" : "notif-danger" }`} >{message}</div>
     );
 };
 
-export const Message = ({ fromMe }) => {
+export const Message = ({ fromMe, sender, message }) => {
 
     const containerStyle = { background : fromMe ? "rgb(10, 85, 197)" :  "rgb(1, 1, 87)",  }
     const b2Styte = fromMe ? 
@@ -68,11 +68,11 @@ export const Message = ({ fromMe }) => {
     return (
         <div className={`border p-1 ${fromMe ? " ps-4 text-end " : " pe-4 " }`}>
             <div style={containerStyle} className="fs-13 containerStyle p-1 rounded" >
-            <div className='text-truncate text-white fw-bold'>{fromMe ? "You" : "Friend"}</div>
+            <div className='text-truncate text-white fw-bold'>{fromMe ? "You" : sender }</div>
             <div
                 style={b2Styte}
                 className={`lh-1 fs-15 text-wrap p-1 text-white rounded ${fromMe && " "}`} 
-            >Message elmtklemük mezülm zlemü mltülm ...</div>
+            >{message}</div>
             </div>
         </div>
     );
