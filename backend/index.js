@@ -16,23 +16,32 @@ app.get("/*", (req, res) => {
 
 
 io.on("connection", socket => {
+
+    socket.on("set-new-user", userData => {
+        
+        console.log(`new user : ${userData.username} `);
+        socket.username = userData.username,
+        
+        socket.broadcast.emit("notification",{ 
+            isHasJoined : true,
+            message : `${userData.username} has joined`,
+            userData : userData
+        });
+
+        socket.emit("notification", {
+            isHasJoined : true,
+            message : `Welcome ${userData.username}`,
+            userData : userData
+        });
+
+    });
+
     
-    console.log(`${socket.id} has joined`);
-
-    socket.broadcast.emit("notification",{ 
-        isHasJoined : true,
-        message : `${socket.id} has joined` 
-    });
-
-    socket.emit("notification", {
-        isHasJoined : true,
-        message : `Welcome ${socket.id}`
-    });
-
-    socket.on("disconnect", () => {
+    socket.on("disconnect", userData => {
         socket.broadcast.emit("notification",  {
             isHasJoined : false,
-            message : `${socket.id} has left`
+            message : `${userData.username} has left`,
+            userData : userData
         });
     });
 

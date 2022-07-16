@@ -16,8 +16,7 @@ export const chatSlice = createSlice({
     reducers : {
 
         login : (state, action) => {
-            state.me.id = action.payload.id;
-            state.me.avatar = action.payload.avatar;
+            state.me = action.payload;
         },
         addNotification : (state, action) => {
             const notification = {
@@ -33,6 +32,15 @@ export const chatSlice = createSlice({
                 "type" : "notification",
                 "conversationObject" : notification
             });
+
+            //add the new user if joinnig or make thi user offline disconect
+            action.payload.isHasJoined 
+            ? state.friends.push(action.payload.userData)
+            : state.friends = state.friends.map( friend => {
+                if(friend.userId == action.payload.userData.userId) friend.isOnline = false;
+                return friend;
+            });
+
         },
         sendMessage : ( state, action ) => {
             const message = {
