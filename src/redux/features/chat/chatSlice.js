@@ -43,18 +43,14 @@ export const chatSlice = createSlice({
 
         },
         sendMessage : ( state, action ) => {
-            const message = {
-                message : action.payload.message,
-                senderId : action.payload.senderId
-            }
-
+            
             //Add it to the massages Array
-            state.messages.push(message);
+            state.messages.push(action.payload);
             //Add it to the conversation Array too 
             state.conversationContents.push({
                 "contentId" : `message-${state.messages.length + 1}`,
                 "type" : "message",
-                "conversationObject" : message
+                "conversationObject" : action.payload
             });
 
         }

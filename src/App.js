@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
-import { Message, Nav, ChatMember, Notification } from './Components';
+import { Message, Nav, ChatMember, Notification, LoginFormModal } from './Components';
 import { useSelector, useDispatch} from 'react-redux';
 import { addNotification, sendMessage, login } from './redux/features/chat/chatSlice';
 
 import "./App.css";
 
-
 const App = props => {
 
+    const lastMessageRef = useRef();
     const [ socket, setSocket ] = useState();
     const dispatcher = useDispatch();
 
@@ -22,23 +22,22 @@ const App = props => {
     //--
 
     //--
-
+ 
     console.log("App rendered");
     console.log(notifications);
     console.log(messages);
-    console.log(me.username)
     //--
 
     const handleLogIn = event => {
-        
 
-        const { usernameInput, cancelButton } = event.target;
+        const { usernameInput, cancelButton, genderRadioBtn } = event.target;
 
         if (usernameInput) {
 
             if (usernameInput.value.length < 2) {
                 usernameInput.className = usernameInput.className + " is-invalid";
             } else {
+
                 usernameInput.className =
                     usernameInput.className
                     .split(" ")
@@ -46,45 +45,47 @@ const App = props => {
                     .join(" ")
                 ;
 
-                const socket = io("http://localhost:5000");
-                setSocket( socket );
-                
-                const userData = {
-                    "username" : usernameInput.value,
-                    "userId" : socket.id,
-                    "isOnline" : true,
-                    "sex" : "m",
-                    "avatar" :`${/*isMan*/true?"m":"w"}${Math.ceil((Math.random() + 0.1) * 4)}.jpg`
-                };
+                //create a socket for the new user and set it to the use socket set
+                const socketCostant = io("http://localhost:5000");
+                setSocket( socketCostant );
 
-                // Tell the other that I just enter
-                socket.emit("set-new-user", userData);
-                //set myself
-                dispatcher(login(userData))
+                //once the server has connected the user
+                socketCostant.on("connect", () => {
 
-                //empty username field and hide the Modal
-                usernameInput.value = "";
-                cancelButton.click();
+                    const userData = {
+                        "username" : usernameInput.value,
+                        "userId" : socketCostant.id,
+                        "isOnline" : true,
+                        "sex" : genderRadioBtn.value,
+                        "avatar" :`${genderRadioBtn.value}${Math.ceil((Math.random() + 0.1) * 4)}.jpg` //returns something like : m4.jpeg
+                    };
+
+                    // Tell the other that I just enter
+                    socketCostant.emit("set-new-user", userData);
+                    //set myself
+                    dispatcher(login(userData))
+
+                    //empty username field and hide the Modal
+                    usernameInput.value = "";
+                    cancelButton.click();
+
+                });
             }
-        }
-        
-        
-        
+        }  
     };
 
     const handleSendMessage = event => {
         
-        const [ messageInput ] = event.target;
+        const { messageInput } = event.target;
         const messageDetails = {
             message : messageInput.value ,
-            senderId : socket.id
+            senderId : me.userId,
+            senderName : me.username
         };
         socket.emit("new-message", messageDetails);
         dispatcher(sendMessage(messageDetails));
         messageInput.value = ""
     };
-
-
 
     useEffect( () => {
 
@@ -98,11 +99,20 @@ const App = props => {
 
     }, [socket]);
 
+    useEffect( () => {
+        console.log(conversationContents.length);
+        if( messages.length > 0 ) { 
+            lastMessageRef?.current.scrollIntoView({behavior: 'smooth'}); 
+        }
+    }, [conversationContents]);
+
     return (
         <div className="h-100 border border-danger">
 
             <div style={{zIndex : 2, borderBottom : "4px solid white"}} className='position-fixed top-0 w-100 h-50px'>
-                {   
+                {  
+                    //Once there's a user name (me.username ) mean once the socket has been created and has emited the "set-new-use" event along with his data to the server.
+                    //The socket is set befor the user triggers the "set-new-uset" event that actually set the user. So, chect if socket is set won't be enough
                     me.username
                     ? <Nav userData={me} />
                     : <div className="Nav h-100 text-end p-2" >
@@ -116,10 +126,15 @@ const App = props => {
                     conversationContents.length > 0 && conversationContents.map( conversationContent => {
                         return conversationContent.type === "notification"
                         ? <Notification key={conversationContent.contentId} message={conversationContent.conversationObject.message} isHasJoined={conversationContent.conversationObject.isHasJoined}/>
-                        : <Message key={conversationContent.contentId} fromMe={conversationContent.conversationObject.senderId === socket.id } sender={conversationContent.conversationObject.senderId} message={conversationContent.conversationObject.message} />
-                    }) 
+                        : <Message 
+                            ref = { ( conversationContent.contentId == (conversationContents[conversationContents.length - 1 ]).contentId )  ? lastMessageRef : null }
+                            key={conversationContent.contentId} 
+                            fromMe={conversationContent.conversationObject.senderId == me.userId } 
+                            sender={conversationContent.conversationObject.senderName} 
+                            message={conversationContent.conversationObject.message} 
+                        />
+                    })
                 }
-
             
             </div>
             <div className='position-fixed top-50px end-0 pt-2 border h-50px w-25 border-success'>
@@ -144,37 +159,8 @@ const App = props => {
             </div>
             {
                 /* message modal */
-                !socket &&
-                <div className="">
-                    <form className="modal fade" onSubmit={ event => {
-                        event.preventDefault();
-                        handleLogIn(event);
-
-                    }} id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabIndex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-                        <div className="modal-dialog modal-dialog-centered">
-                            <div className="modal-content">
-                                <div className="modal-header">
-                                    <h5 className="modal-title" id="staticBackdropLabel">Log In</h5>
-                                    <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div className="modal-body">
-                                    <div className="mb-3">
-                                        <label htmlFor="username" className="form-label">User name</label>
-                                        <input type="text" className="form-control form-control-sm" name="usernameInput" id="username" aria-describedby="username-helper" />
-                                        <div className="invalid-feedback">
-                                            The username requires at least 2 carracters.
-                                        </div>
-                                        <div id="username-helper" className="form-text">This name will appear to the othe member as @username</div>
-                                    </div>
-                                </div>
-                                <div className="modal-footer">
-                                    <button name="cancelButton" type="button" className="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                    <input type="submit" className="btn btn-sm btn-primary"  value="Log in"/>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+                me.username ? <span></span> : <LoginFormModal onSubmitHandler={handleLogIn} />
+                
             }
 
         </div>

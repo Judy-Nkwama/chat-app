@@ -14,12 +14,66 @@ export const Avatar = ({isOnline, avatar}) => {
     );
 };
 
+export const LoginFormModal = ({ onSubmitHandler }) => {
+
+    const [ username, setUserName ] = useState("");
+    const [ gender, setGender ] = useState("m");
+
+    const handleChanges = event => {
+        if(event.target.name == "username") setUserName(event.target.value);
+        if(event.target.name == "genderRadioBtn") setGender(event.target.value);
+    };
+
+    return (
+        <div className="">
+            <form className="modal fade" onSubmit={event => {
+                event.preventDefault();
+                onSubmitHandler(event);
+
+            }} id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabIndex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                <div className="modal-dialog modal-dialog-centered">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title" id="staticBackdropLabel">Log In</h5>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="mb-3">
+                                <label htmlFor="username" className="form-label">User name</label>
+                                <input onChange={event => handleChanges(event)} type="text" className="form-control form-control-sm" name="usernameInput" id="username" aria-describedby="username-helper" />
+                                <div value={username} className="invalid-feedback">
+                                    The username requires at least 2 carracters.
+                                </div>
+                                <div id="username-helper" className="form-text">This name will appear to the othe member as @username</div>
+                            </div>
+                            <div className="form-check">
+                                <input checked={gender == "m"} onChange={event => handleChanges(event)} className="form-check-input" value="m" type="radio" name="genderRadioBtn" id="man" />
+                                <label className="form-check-label" htmlFor="man"> Man </label>
+                            </div>
+                            <div className="form-check">
+                                <input checked={gender == "w"} onChange={event => handleChanges(event)} className="form-check-input" value="w" type="radio" name="genderRadioBtn" id="woman" />
+                                <label className="form-check-label" htmlFor="woman"> Woman </label>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button name="cancelButton" type="button" className="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <input type="submit" className="btn btn-sm btn-primary" value="Log in" />
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    );
+};
+
 export const Nav = ({ userData, typer}) => {
+    const { username, userId, isOnline, avatar } = userData;
+    //console.log("user id : " + username, " / user id : " + userId);
     return (
         <div className="Nav h-100">
             <div className="d-flex pt-2 justify-content-end pe-2">
-                <span style={{color : "rgb(216, 5, 93)"}} className="text-end lh-sm me-1 fs-13">{userData.username}<br/>{userData.userId}</span>
-                <Avatar isOnline={userData.isOnline} avatar={userData.avatar} />
+                <span style={{color : "rgb(216, 5, 93)"}} className="text-end lh-sm me-1 fs-13">{username}<br/>{userId}</span>
+                <Avatar isOnline={isOnline} avatar={avatar} />
             </div>
             <div className="border istyping d-flex">
                 <div style={{width : "18px", height : "18px"}} className="spinner-grow text-light mx-1" role="status">
@@ -51,10 +105,14 @@ export const Notification = ({isHasJoined, message}) => {
     );
 };
 
-export const Message = ({ fromMe, sender, message }) => {
+const FancyButton = React.forwardRef( (props, ref) => (  <button ref={ref} className="FancyButton">    {props.children}
+  </button>
+));
 
-    const containerStyle = { background : fromMe ? "rgb(10, 85, 197)" :  "rgb(1, 1, 87)",  }
-    const b2Styte = fromMe ? 
+export const Message = React.forwardRef( (props, ref ) => {
+
+    const containerStyle = { background : props.fromMe ? "rgb(10, 85, 197)" :  "rgb(1, 1, 87)",  }
+    const b2Styte = props.fromMe ? 
         { 
             background: "rgb(50, 113, 207)",
             borderRight : "3px solid orange"
@@ -65,16 +123,18 @@ export const Message = ({ fromMe, sender, message }) => {
         }
     ;
 
+        console.log( ref.current ?? "is null")
+
     return (
-        <div className={`border p-1 ${fromMe ? " ps-4 text-end " : " pe-4 " }`}>
+        <div ref={ref} className={`border p-1 ${props.fromMe ? " ps-4 text-end " : " pe-4 " }`}>
             <div style={containerStyle} className="fs-13 containerStyle p-1 rounded" >
-            <div className='text-truncate text-white fw-bold'>{fromMe ? "You" : "@" + sender }</div>
+            <div className='text-truncate text-white fw-bold'>{props.fromMe ? "You" : "@" + props.sender }</div>
             <div
                 style={b2Styte}
-                className={`lh-1 fs-15 text-wrap p-1 text-white rounded ${fromMe && " "}`} 
-            >{message}</div>
+                className={`lh-1 fs-15 text-wrap p-1 text-white rounded ${props.fromMe && " "}`} 
+            >{props.message}</div>
             </div>
         </div>
     );
-};
+});
 

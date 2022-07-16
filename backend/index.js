@@ -46,11 +46,7 @@ io.on("connection", socket => {
     });
 
     socket.on("new-message", messageObject => {
-        console.log(messageObject);
-        io.except(socket.id).emit("new-message", {
-            message : messageObject.message,
-            senderId : messageObject.senderId 
-        });
+        io.except(socket.id).emit("new-message", messageObject);
     });
 
 });
