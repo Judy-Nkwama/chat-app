@@ -43,7 +43,6 @@ export const chatSlice = createSlice({
 
         },
         sendMessage : ( state, action ) => {
-            
             //Add it to the massages Array
             state.messages.push(action.payload);
             //Add it to the conversation Array too 

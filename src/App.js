@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
-import { Message, Nav, ChatMember, Notification, LoginFormModal } from './Components';
+import { MessageContent, Nav, ChatMember, Notification, LoginFormModal } from './Components';
 import { useSelector, useDispatch} from 'react-redux';
 import { addNotification, sendMessage, login } from './redux/features/chat/chatSlice';
 
@@ -11,18 +11,14 @@ const App = props => {
     const lastMessageRef = useRef();
     const [ socket, setSocket ] = useState();
     const dispatcher = useDispatch();
-
     //--
 
     const me = useSelector( state => state.chat.me);
     const notifications = useSelector( state => state.chat.notifications);
     const messages = useSelector( state => state.chat.messages);
     const conversationContents = useSelector( state => state.chat.conversationContents);
-
-    //--
-
-    //--
  
+    //--
     console.log("App rendered");
     console.log(notifications);
     console.log(messages);
@@ -106,6 +102,11 @@ const App = props => {
         }
     }, [conversationContents]);
 
+
+    useEffect( () => {
+        lastMessageRef?.current.scrollIntoView({behavior: 'smooth'}); 
+    }, [lastMessageRef.current]);
+
     return (
         <div className="h-100 border border-danger">
 
@@ -120,32 +121,57 @@ const App = props => {
                     </div>
                 }
             </div>
-            <div className='position-absolute top-50px w-75 h-50px border border-success'> 
-            
+
+            <div className='position-absolute pt-2 top-50px w-75 border border-success'> 
+                            
                 {
                     conversationContents.length > 0 && conversationContents.map( conversationContent => {
-                        return conversationContent.type === "notification"
-                        ? <Notification key={conversationContent.contentId} message={conversationContent.conversationObject.message} isHasJoined={conversationContent.conversationObject.isHasJoined}/>
-                        : <Message 
-                            ref = { ( conversationContent.contentId == (conversationContents[conversationContents.length - 1 ]).contentId )  ? lastMessageRef : null }
-                            key={conversationContent.contentId} 
-                            fromMe={conversationContent.conversationObject.senderId == me.userId } 
-                            sender={conversationContent.conversationObject.senderName} 
-                            message={conversationContent.conversationObject.message} 
-                        />
+                        if(conversationContent.type === "notification"){
+                            // If it is a Notification
+                            return <Notification key={conversationContent.contentId} message={conversationContent.conversationObject.message} isHasJoined={conversationContent.conversationObject.isHasJoined}/>
+                        }else{
+                            //If it is a Message
+                            const fromMe = conversationContent.conversationObject.senderId == me.userId;
+                            const sender = conversationContent.conversationObject.senderName;
+                            const message = conversationContent.conversationObject.message;
+                            
+                            let Content =
+                                <div key={conversationContent.contentId} className={`p-1 ${fromMe ? " ps-4 text-end " : " pe-4 "}`}>
+                                    <MessageContent fromMe={fromMe} sender={sender} message={message} />
+                                </div>
+                            ;
+
+                            if( conversationContent.contentId == (conversationContents[conversationContents.length - 1 ]).contentId ){
+                                //if it is tha last message we attch the ref param
+                                Content = 
+                                    <div 
+                                    key={conversationContent.contentId} 
+                                        className={`p-1 ${fromMe ? " ps-4 text-end " : " pe-4 "}`}
+                                    >
+                                        <MessageContent fromMe={fromMe} sender={sender} message={message} />
+                                    </div>
+                                ;
+                            }
+
+                            return Content;
+                            
+                        } 
                     })
                 }
-            
+                <div style={{ marginBottom : "55px" }}  ref={lastMessageRef} ></div>
             </div>
-            <div className='position-fixed top-50px end-0 pt-2 border h-50px w-25 border-success'>
+
+            <div className='position-fixed top-50px end-0 pt-2 border w-25 border-success'>
                 {/* <ChatMember />
                 <ChatMember isMan={true} isOnline={true} isTyping={true} /> */}
             </div>
+
             <div className='position-fixed bottom-0 h-50px w-100 border border-primary'>
                 <form className="h-100 bg-light p-2" onSubmit={ (event) => { event.preventDefault(); handleSendMessage(event) } }>
                     <fieldset disabled={socket ? false : true} className="d-flex h-100">
+                        
                         <input 
-                            style={{ background: "#dee2ff" }} name="messageInput" type="text" id="messageInput"
+                            style={{ background: "#dee2ff", width : "85%" }} name="messageInput" type="text" id="messageInput"
                             className="form-control border-0 me-1"
                         />
 
@@ -153,17 +179,24 @@ const App = props => {
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="bi bi-send-fill" >
                                 <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z" />
                             </svg>
-                    </button>
+                        </button>
+
                     </ fieldset>
                 </form>
             </div>
             {
-                /* message modal */
+                // message modal
                 me.username ? <span></span> : <LoginFormModal onSubmitHandler={handleLogIn} />
-                
             }
 
         </div>
     );
 };
 export default App;
+
+
+
+
+
+
+

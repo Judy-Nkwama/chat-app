@@ -105,36 +105,24 @@ export const Notification = ({isHasJoined, message}) => {
     );
 };
 
-const FancyButton = React.forwardRef( (props, ref) => (  <button ref={ref} className="FancyButton">    {props.children}
-  </button>
-));
+export const MessageContent = ({ fromMe, sender, message }) => {
 
-export const Message = React.forwardRef( (props, ref ) => {
-
-    const containerStyle = { background : props.fromMe ? "rgb(10, 85, 197)" :  "rgb(1, 1, 87)",  }
-    const b2Styte = props.fromMe ? 
-        { 
-            background: "rgb(50, 113, 207)",
-            borderRight : "3px solid orange"
-        } :
-        { 
-            background: "rgb(20, 37, 133)",
-            borderLeft : "3px solid rgb(5, 204, 144)"
-        }
+    const containerStyle = { background : fromMe ? "rgb(10, 85, 197)" :  "rgb(1, 1, 87)",  }
+    const b2Styte = fromMe 
+        ? { background: "rgb(50, 113, 207)", borderRight : "3px solid orange"} 
+        : { background: "rgb(20, 37, 133)", borderLeft : "3px solid rgb(5, 204, 144)" }
     ;
 
-        console.log( ref.current ?? "is null")
-
     return (
-        <div ref={ref} className={`border p-1 ${props.fromMe ? " ps-4 text-end " : " pe-4 " }`}>
+        <div >
             <div style={containerStyle} className="fs-13 containerStyle p-1 rounded" >
-            <div className='text-truncate text-white fw-bold'>{props.fromMe ? "You" : "@" + props.sender }</div>
+            <div className='text-truncate text-white fw-bold'>{fromMe ? "You" : "@" + sender }</div>
             <div
                 style={b2Styte}
-                className={`lh-1 fs-15 text-wrap p-1 text-white rounded ${props.fromMe && " "}`} 
-            >{props.message}</div>
+                className={`lh-1 fs-15 text-wrap text-break p-1 text-white rounded ${fromMe && " "}`} 
+            >{message}</div>
             </div>
         </div>
     );
-});
+};
 
