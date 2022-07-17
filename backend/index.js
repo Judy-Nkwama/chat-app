@@ -17,32 +17,56 @@ app.get("/*", (req, res) => {
 
 io.on("connection", socket => {
 
-    socket.on("set-new-user", userData => {
+    socket.on("set-new-user", async userData => {
         
         console.log(`new user : ${userData.username} `);
-        socket.username = userData.username,
+
+        // setting the new socket additional info
+        socket.username = userData.username;
+        socket.isTyping = userData.isTyping;
+        socket.sex = userData.sex;
+        socket.isOnline = userData.isOnline;
+        socket.avatar = userData.avatar;
+        socket.userId = userData.userId;
+        //--
         
+        socket.broadcast.emit("update-friends", userData );
+
         socket.broadcast.emit("notification",{ 
             isHasJoined : true,
-            message : `${userData.username} has joined`,
-            userData : userData
+            message : `${userData.username} has joined`
         });
 
         socket.emit("notification", {
             isHasJoined : true,
-            message : `Welcome ${userData.username}`,
-            userData : userData
+            message : `Welcome ${userData.username}`
         });
+
+        const sockets = await io.fetchSockets();
+        const currentUsers = sockets.map(socket => {
+            //create an empty user objet
+            const user = {};
+            //fill it with the socket user info and do this for each connected user(socket)
+            user.username = socket.username;
+            user.isTyping = socket.isTyping;
+            user.sex = socket.sex;
+            user.isOnline = socket.isOnline;
+            user.avatar = socket.avatar;
+            user.userId = socket.userId;
+            //return the it for mapping
+            return user;
+        } );
+
+        socket.emit("set-available-friends", currentUsers );
 
     });
-
     
-    socket.on("disconnect", userData => {
+    socket.on("disconnect", () => {
         socket.broadcast.emit("notification",  {
             isHasJoined : false,
-            message : `${userData.username} has left`,
-            userData : userData
+            message : `${socket.username} has left`
         });
+        io.except(socket.id).emit("update-friends", socket.id );
     });
 
     socket.on("new-message", messageObject => {

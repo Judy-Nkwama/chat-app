@@ -1,27 +1,30 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { io } from 'socket.io-client';
-import { MessageContent, Nav, ChatMember, Notification, LoginFormModal } from './Components';
 import { useSelector, useDispatch} from 'react-redux';
-import { addNotification, sendMessage, login } from './redux/features/chat/chatSlice';
+import { io } from 'socket.io-client';
+import { Message, Nav, ChatMember, Notification, LoginFormModal } from './Components';
+import { addNotification, sendMessage, login, updateFriends, setAvailableFriendsOnLogin } from './redux/features/chat/chatSlice';
 
 import "./App.css";
 
-const App = props => {
+const App = () => {
 
     const lastMessageRef = useRef();
-    const [ socket, setSocket ] = useState();
     const dispatcher = useDispatch();
+    const [ socket, setSocket ] = useState();
+    
     //--
 
     const me = useSelector( state => state.chat.me);
     const notifications = useSelector( state => state.chat.notifications);
     const messages = useSelector( state => state.chat.messages);
     const conversationContents = useSelector( state => state.chat.conversationContents);
+    const friends = useSelector( state => state.chat.friends );
  
     //--
     console.log("App rendered");
     console.log(notifications);
     console.log(messages);
+    console.log(friends);
     //--
 
     const handleLogIn = event => {
@@ -51,6 +54,7 @@ const App = props => {
                     const userData = {
                         "username" : usernameInput.value,
                         "userId" : socketCostant.id,
+                        "isTyping" : false,
                         "isOnline" : true,
                         "sex" : genderRadioBtn.value,
                         "avatar" :`${genderRadioBtn.value}${Math.ceil((Math.random() + 0.1) * 4)}.jpg` //returns something like : m4.jpeg
@@ -93,39 +97,41 @@ const App = props => {
             dispatcher(sendMessage(messageDetails));
         });
 
+        socket?.on("update-friends", userData =>{
+            dispatcher(updateFriends(userData));
+        });
+
+        socket?.on("set-available-friends", availableFriends => {
+            dispatcher(setAvailableFriendsOnLogin(availableFriends))
+        });
+
     }, [socket]);
 
     useEffect( () => {
-        console.log(conversationContents.length);
         if( messages.length > 0 ) { 
             lastMessageRef?.current.scrollIntoView({behavior: 'smooth'}); 
         }
-    }, [conversationContents]);
-
-
-    useEffect( () => {
-        lastMessageRef?.current.scrollIntoView({behavior: 'smooth'}); 
     }, [lastMessageRef.current]);
 
     return (
-        <div className="h-100 border border-danger">
+        <div className="h-100">
 
             <div style={{zIndex : 2, borderBottom : "4px solid white"}} className='position-fixed top-0 w-100 h-50px'>
                 {  
                     //Once there's a user name (me.username ) mean once the socket has been created and has emited the "set-new-use" event along with his data to the server.
                     //The socket is set befor the user triggers the "set-new-uset" event that actually set the user. So, chect if socket is set won't be enough
                     me.username
-                    ? <Nav userData={me} />
+                    ? <Nav userData={me} typer="No Body" />
                     : <div className="Nav h-100 text-end p-2" >
                         <button type="button" className="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop" onClick={handleLogIn}> login </button>
                     </div>
                 }
             </div>
 
-            <div className='position-absolute pt-2 top-50px w-75 border border-success'> 
+            <div className='position-absolute pt-2 top-50px w-75'> 
                             
                 {
-                    conversationContents.length > 0 && conversationContents.map( conversationContent => {
+                     conversationContents.length > 0 && conversationContents.map( conversationContent => {
                         if(conversationContent.type === "notification"){
                             // If it is a Notification
                             return <Notification key={conversationContent.contentId} message={conversationContent.conversationObject.message} isHasJoined={conversationContent.conversationObject.isHasJoined}/>
@@ -135,38 +141,45 @@ const App = props => {
                             const sender = conversationContent.conversationObject.senderName;
                             const message = conversationContent.conversationObject.message;
                             
-                            let Content =
-                                <div key={conversationContent.contentId} className={`p-1 ${fromMe ? " ps-4 text-end " : " pe-4 "}`}>
-                                    <MessageContent fromMe={fromMe} sender={sender} message={message} />
-                                </div>
-                            ;
-
-                            if( conversationContent.contentId == (conversationContents[conversationContents.length - 1 ]).contentId ){
-                                //if it is tha last message we attch the ref param
-                                Content = 
-                                    <div 
-                                    key={conversationContent.contentId} 
-                                        className={`p-1 ${fromMe ? " ps-4 text-end " : " pe-4 "}`}
-                                    >
-                                        <MessageContent fromMe={fromMe} sender={sender} message={message} />
-                                    </div>
-                                ;
-                            }
-
-                            return Content;
-                            
+                            return (
+                                <Message
+                                    key={conversationContent.contentId}
+                                    fromMe={fromMe}
+                                    sender={sender}
+                                    message={message}
+                                />
+                            );
                         } 
                     })
+                    
                 }
+                {/* The next div handle the scroll. It makes sure the last messageis in the view  */}
                 <div style={{ marginBottom : "55px" }}  ref={lastMessageRef} ></div>
             </div>
 
-            <div className='position-fixed top-50px end-0 pt-2 border w-25 border-success'>
-                {/* <ChatMember />
-                <ChatMember isMan={true} isOnline={true} isTyping={true} /> */}
+            <div className='position-fixed top-50px end-0 pt-2 w-25 '>
+                {
+                    /* <ChatMember />*/
+                    friends.map( friend => {
+                        if( friend.userId != me.userId ){
+
+                            return(
+                                <ChatMember
+                                    key={friend.userId}
+                                    isMan={friend.sex == "m"} 
+                                    isOnline={friend.isOnline} 
+                                    isTyping={friend.isTyping} 
+                                    avatar={friend.avatar}
+                                    username={friend.username}
+                                />
+                            );
+
+                        }
+                    })
+                }
             </div>
 
-            <div className='position-fixed bottom-0 h-50px w-100 border border-primary'>
+            <div className='position-fixed bottom-0 h-50px w-100'>
                 <form className="h-100 bg-light p-2" onSubmit={ (event) => { event.preventDefault(); handleSendMessage(event) } }>
                     <fieldset disabled={socket ? false : true} className="d-flex h-100">
                         

@@ -18,6 +18,7 @@ export const chatSlice = createSlice({
         login : (state, action) => {
             state.me = action.payload;
         },
+        
         addNotification : (state, action) => {
             const notification = {
                 "isHasJoined" : action.payload.isHasJoined,
@@ -32,16 +33,8 @@ export const chatSlice = createSlice({
                 "type" : "notification",
                 "conversationObject" : notification
             });
-
-            //add the new user if joinnig or make thi user offline disconect
-            action.payload.isHasJoined 
-            ? state.friends.push(action.payload.userData)
-            : state.friends = state.friends.map( friend => {
-                if(friend.userId == action.payload.userData.userId) friend.isOnline = false;
-                return friend;
-            });
-
         },
+
         sendMessage : ( state, action ) => {
             //Add it to the massages Array
             state.messages.push(action.payload);
@@ -52,9 +45,32 @@ export const chatSlice = createSlice({
                 "conversationObject" : action.payload
             });
 
+        },
+        
+        updateFriends : ( state, action ) => {
+            
+            //add the new user if joining or make him user offline disconecting
+            if( action.payload.userId && !state.friends.find( friend => friend.userId == action.payload.userId ) ){
+                state.friends.push(action.payload);
+            }else{
+                state.friends = state.friends.map( friend => {
+                    if(friend.userId == action.payload) friend.isOnline = false;
+                    return friend;
+                });
+            }
+
+        },
+
+        setAvailableFriendsOnLogin : ( state, action ) => {
+            state.friends = action.payload;
         }
     }
 });
 
-export const {login, addNotification, sendMessage } = chatSlice.actions;
+
+export const { 
+    login, addNotification, sendMessage, updateFriends, 
+    setAvailableFriendsOnLogin
+} = chatSlice.actions;
+
 export default chatSlice.reducer;

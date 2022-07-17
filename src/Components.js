@@ -75,25 +75,25 @@ export const Nav = ({ userData, typer}) => {
                 <span style={{color : "rgb(216, 5, 93)"}} className="text-end lh-sm me-1 fs-13">{username}<br/>{userId}</span>
                 <Avatar isOnline={isOnline} avatar={avatar} />
             </div>
-            <div className="border istyping d-flex">
+            {/* <div className="border istyping d-flex">
                 <div style={{width : "18px", height : "18px"}} className="spinner-grow text-light mx-1" role="status">
                     <span className="visually-hidden">is typing...</span>
                 </div>
-                <span>judy is typing...</span>
-            </div>
+                <span>{typer} is typing...</span>
+            </div> */}
         </div>
     );
 };
 
-export const ChatMember = ({isTyping, isOnline, isMan}) => {
+export const ChatMember = ({isTyping, isOnline, isMan, avatar, username}) => {
     return (
-        <div className="d-flex flex-column align-items-center">
-            <Avatar isMan={isMan} isOnline={isOnline}/>
+        <div className="d-flex flex-column align-items-center py-1">
+            <Avatar isMan={isMan} isOnline={isOnline} avatar={avatar}/>
             <div className="d-flex align-items-center ">
-                <div style={{width : "15px", height : "15px", display : isTyping ? "" : "none"}} className="spinner-grow text-secondary" role="status">
-                    <span className="visually-hidden">is typing...</span>
+                <div style={{width : "15px", height : "15px", display : isOnline ? "" : "none"}} className="spinner-grow text-secondary" role="status">
+                   <span className="visually-hidden">is typing...</span>
                 </div>
-                <span className="fs-13 text-secondary">Judy</span>
+                <span className="fs-13 text-secondary">{username}</span>
             </div>
         </div>
     );
@@ -105,7 +105,7 @@ export const Notification = ({isHasJoined, message}) => {
     );
 };
 
-export const MessageContent = ({ fromMe, sender, message }) => {
+export const Message = ({ fromMe, sender, message, messageId }) => {
 
     const containerStyle = { background : fromMe ? "rgb(10, 85, 197)" :  "rgb(1, 1, 87)",  }
     const b2Styte = fromMe 
@@ -114,7 +114,7 @@ export const MessageContent = ({ fromMe, sender, message }) => {
     ;
 
     return (
-        <div >
+        <div className={`p-1 ${fromMe ? " ps-4 text-end " : " pe-4 "}`}   >
             <div style={containerStyle} className="fs-13 containerStyle p-1 rounded" >
             <div className='text-truncate text-white fw-bold'>{fromMe ? "You" : "@" + sender }</div>
             <div
